@@ -35,7 +35,8 @@
                             <th scope="col" class="ps-4">Student Name</th>
                             <th scope="col">Student Image</th>
                             <th scope="col">Dob</th>
-                            <th scope="col" class="pe-4">Contact</th>
+                            <th scope="col">Contact</th>
+                            <th scope="col" class="pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,7 +52,16 @@
                                         <img src="<%= student.image %>" alt="<%= student.name %>" class="rounded shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
                                     </td>
                                     <td><%= formatDate(student.dob) %></td>
-                                    <td class="pe-4 text-muted"><%= student.contact %></td>
+                                    <td class="text-muted"><%= student.contact %></td>
+                                    <td class="pe-4">
+                                        <div class="d-flex gap-2">
+                                            <a href="/student/<%= student.studentId %>" class="btn btn-sm btn-outline-primary">View</a>
+                                            <a href="/student/<%= student.studentId %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                            <form action="/student/<%= student.studentId %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete this student?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
                             <% }); %>
                         <% } else { %>

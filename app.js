@@ -79,6 +79,53 @@ app.get('/student/:id', (req, res) => {
     });
 });
 
+// 5. GET Route: Render the form to edit an existing student
+app.get('/student/:id/edit', (req, res) => {
+    const studentId = req.params.id;
+    const query = 'SELECT * FROM student WHERE studentId = ?';
+
+    db.query(query, [studentId], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Database error');
+        }
+        if (results.length === 0) {
+            return res.status(404).send('Student not found');
+        }
+
+        res.render('editStudent', { student: results[0] });
+    });
+});
+
+// 6. POST Route: Handle updating a student
+app.post('/student/:id/edit', (req, res) => {
+    const studentId = req.params.id;
+    const { name, dob, contact, image } = req.body;
+    const query = 'UPDATE student SET name = ?, dob = ?, contact = ?, image = ? WHERE studentId = ?';
+
+    db.query(query, [name, dob, contact, image, studentId], (err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error updating student data');
+        }
+        res.redirect(`/student/${studentId}`);
+    });
+});
+
+// 7. POST Route: Delete a student
+app.post('/student/:id/delete', (req, res) => {
+    const studentId = req.params.id;
+    const query = 'DELETE FROM student WHERE studentId = ?';
+
+    db.query(query, [studentId], (err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error deleting student');
+        }
+        res.redirect('/');
+    });
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
