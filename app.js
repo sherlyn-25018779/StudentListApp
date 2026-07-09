@@ -1,131 +1,246 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 
-// Set up template engine (EJS)
+// =============================
+// EJS
+// =============================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// =============================
 // Middleware
-app.use(express.urlencoded({ extended: true })); // Parses incoming form data
-app.use(express.static(path.join(__dirname, 'public'))); // Serves static files if needed
+// =============================
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection Pool
+// =============================
+// MySQL
+// =============================
 const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
-    password: 'RP738964$', 
+    password: 'RP738964$',
     database: 'c237_studentlistapp',
     waitForConnections: true,
     connectionLimit: 10
 });
 
-// Helper function to format dates nicely for the UI (e.g., "May 08, 2007")
+// =============================
+// Multer (Image Upload)
+// =============================
+const storage = multer.diskStorage({
+
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads');
+    },
+
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+
+});
+
+const upload = multer({
+    storage: storage
+});
+
+// =============================
+// Format Date
+// =============================
 const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: '2-digit' };
+
+    const options = {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit'
+    };
+
     return new Date(dateString).toLocaleDateString('en-US', options);
+
 };
 
-// 1. GET Route: Display all students (index.ejs)
+// =============================
+// Home Page
+// =============================
 app.get('/', (req, res) => {
-    const query = 'SELECT * FROM student';
-    db.query(query, (err, results) => {
+
+    db.query('SELECT * FROM student', (err, results) => {
+
         if (err) {
             console.error(err);
             return res.status(500).send('Database query error');
         }
-        res.render('index', { students: results, formatDate });
+
+        res.render('index', {
+            students: results,
+            formatDate
+        });
+
     });
+
 });
 
-// 2. GET Route: Render the form to add a new student (addStudent.ejs)
+// =============================
+// Add Student Page
+// =============================
 app.get('/student', (req, res) => {
     res.render('addStudent');
 });
 
-// 3. POST Route: Handle the student form submission
-app.post('/student', (req, res) => {
-    const { name, dob, contact, image } = req.body;
-    const query = 'INSERT INTO student (name, dob, contact, image) VALUES (?, ?, ?, ?)';
-    
-    db.query(query, [name, dob, contact, image], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error inserting student data');
-        }
-        // Successfully added, redirect back to home view
-        res.redirect('/');
-    });
+// =============================
+// Add Student
+// =============================
+app.post('/student', upload.single('image'), (req, res) => {
+
+    const { name, dob, contact } = req.body;
+
+    const image = req.file
+        ? req.file.filename
+        : '';
+
+    const query =
+        'INSERT INTO student(name,dob,contact,image) VALUES (?,?,?,?)';
+
+    db.query(
+        query,
+        [name, dob, contact, image],
+        (err) => {
+
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Database Error");
+            }
+
+            res.redirect('/');
+
+        });
+
 });
 
-// 4. GET Route: View a specific student's details (student.ejs)
+// =============================
+// View Student
+// =============================
 app.get('/student/:id', (req, res) => {
-    const studentId = req.params.id;
-    const query = 'SELECT * FROM student WHERE studentId = ?';
-    
-    db.query(query, [studentId], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Database error');
-        }
-        if (results.length === 0) {
-            return res.status(404).send('Student not found');
-        }
-        
-        // Pass the single student record and the date formatter to student.ejs
-        res.render('student', { student: results[0], formatDate });
-    });
+
+    db.query(
+        'SELECT * FROM student WHERE studentId=?',
+        [req.params.id],
+        (err, results) => {
+
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Database Error");
+            }
+
+            if (results.length == 0) {
+                return res.status(404).send("Student not found");
+            }
+
+            res.render('student', {
+                student: results[0],
+                formatDate
+            });
+
+        });
+
 });
 
-// 5. GET Route: Render the form to edit an existing student
+// =============================
+// Edit Student Page
+// =============================
 app.get('/student/:id/edit', (req, res) => {
-    const studentId = req.params.id;
-    const query = 'SELECT * FROM student WHERE studentId = ?';
 
-    db.query(query, [studentId], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Database error');
-        }
-        if (results.length === 0) {
-            return res.status(404).send('Student not found');
-        }
+    db.query(
+        'SELECT * FROM student WHERE studentId=?',
+        [req.params.id],
+        (err, results) => {
 
-        res.render('editStudent', { student: results[0] });
-    });
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Database Error");
+            }
+
+            if (results.length == 0) {
+                return res.status(404).send("Student not found");
+            }
+
+            res.render('editStudent', {
+                student: results[0]
+            });
+
+        });
+
 });
 
-// 6. POST Route: Handle updating a student
-app.post('/student/:id/edit', (req, res) => {
-    const studentId = req.params.id;
-    const { name, dob, contact, image } = req.body;
-    const query = 'UPDATE student SET name = ?, dob = ?, contact = ?, image = ? WHERE studentId = ?';
+// =============================
+// Update Student
+// =============================
+app.post('/student/:id/edit', upload.single('image'), (req, res) => {
 
-    db.query(query, [name, dob, contact, image, studentId], (err) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error updating student data');
-        }
-        res.redirect(`/student/${studentId}`);
-    });
+    const { name, dob, contact, oldImage } = req.body;
+
+    const image = req.file
+        ? req.file.filename
+        : oldImage;
+
+    const query = `
+    UPDATE student
+    SET
+    name=?,
+    dob=?,
+    contact=?,
+    image=?
+    WHERE studentId=?
+    `;
+
+    db.query(
+        query,
+        [name, dob, contact, image, req.params.id],
+        (err) => {
+
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Update Error");
+            }
+
+            res.redirect(`/student/${req.params.id}`);
+
+        });
+
 });
 
-// 7. POST Route: Delete a student
+// =============================
+// Delete Student
+// =============================
 app.post('/student/:id/delete', (req, res) => {
-    const studentId = req.params.id;
-    const query = 'DELETE FROM student WHERE studentId = ?';
 
-    db.query(query, [studentId], (err) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error deleting student');
-        }
-        res.redirect('/');
-    });
+    db.query(
+        'DELETE FROM student WHERE studentId=?',
+        [req.params.id],
+        (err) => {
+
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Delete Error");
+            }
+
+            res.redirect('/');
+
+        });
+
 });
 
-// Start server
+// =============================
+// Server
+// =============================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+
+    console.log(`Server running on port ${PORT}`);
+
+});

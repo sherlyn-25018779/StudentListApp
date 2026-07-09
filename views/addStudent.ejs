@@ -30,7 +30,7 @@
                 <div class="card border-0 shadow-sm p-4">
                     <h2 class="text-center mb-4 fw-semibold text-secondary-emphasis">Add New Student</h2>
                     
-                    <form action="/student" method="POST">
+                    <form action="/student" method="POST" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="name" class="form-label text-muted small fw-bold">Student Name:</label>
                             <input type="text" class="form-control" id="name" name="name" required placeholder="e.g. Anne John">
@@ -47,8 +47,10 @@
                         </div>
                         
                         <div class="mb-4">
-                            <label for="image" class="form-label text-muted small fw-bold">Image URL:</label>
-                            <input type="url" class="form-control" id="image" name="image" required placeholder="https://images.unsplash.com/...">
+                            <label for="image" class="form-label text-muted small fw-bold">
+                                Student Photo:
+                            </label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
                         </div>
                         
                         <div class="d-grid">

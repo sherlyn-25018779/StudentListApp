@@ -30,7 +30,7 @@
                 <div class="card border-0 shadow-sm p-4">
                     <h2 class="text-center mb-4 fw-semibold text-secondary-emphasis">Edit Student</h2>
 
-                    <form action="/student/<%= student.studentId %>/edit" method="POST">
+                    <form action="/student/<%= student.studentId %>/edit" method="POST" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="name" class="form-label text-muted small fw-bold">Student Name:</label>
                             <input type="text" class="form-control" id="name" name="name" value="<%= student.name %>" required>
@@ -46,9 +46,43 @@
                             <input type="text" class="form-control" id="contact" name="contact" maxlength="10" value="<%= student.contact %>" required>
                         </div>
 
+                        <div class="mb-3">
+
+                            <label class="form-label text-muted small fw-bold">
+                                Current Photo
+                            </label>
+
+                            <br>
+
+                            <img
+                                src="/uploads/<%= student.image %>"
+                                width="120"
+                                class="img-thumbnail mb-3">
+
+                        </div>
+
+                        <input
+                        type="hidden"
+                        name="oldImage"
+                        value="<%= student.image %>">
+
                         <div class="mb-4">
-                            <label for="image" class="form-label text-muted small fw-bold">Image URL:</label>
-                            <input type="url" class="form-control" id="image" name="image" value="<%= student.image %>" required>
+
+                            <label
+                            for="image"
+                            class="form-label text-muted small fw-bold">
+
+                                Upload New Photo
+
+                            </label>
+
+                            <input
+                            type="file"
+                            class="form-control"
+                            id="image"
+                            name="image"
+                            accept="image/*">
+
                         </div>
 
                         <div class="d-grid gap-2">
